@@ -22,16 +22,27 @@ class ContextArtist {
   }
 
   drawRect(component) {
-    const [originX, originY] = this.#calculateOriginFromCenter(component.x, component.y, component.width, component.height);
+    const orbitRadius = component.animation?.orbit?.radius || 0;
+    const orbitRotation = component.animation?.orbit?.rotation || 0;
+    let [originX, originY] = this.#calculateOriginFromCenter(component.x, component.y, component.width, component.height);
+    if(orbitRadius > 0) {
+      originX += orbitRadius;
+    }
     const [translateX, translateY] = this.#calculateRotationTranslate(originX, originY, component.width, component.height);
     const radii = ("radii" in component)? component.radii : [0]; 
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = component.colour;
     ctx.lineWidth = component.lineWidth;
+
+    ctx.translate(component.x, component.y);
+    ctx.rotate(orbitRotation * Math.PI / 180);
+    ctx.translate(-component.x, -component.y);
+
     ctx.translate(translateX, translateY);
     ctx.rotate(component.rotation * Math.PI / 180);
     ctx.translate(-translateX, -translateY);
+
     ctx.roundRect(originX, originY, component.width, component.height, radii);
     ctx.stroke();
     ctx.restore();
@@ -69,11 +80,13 @@ class Actor {
   }
 
   #animate(component) {
-    if(!("animation" in component)) {
-      return; 
-    }
+    if(!("animation" in component)) return;
+
     component.rotation = ("rotate" in component.animation) ? component.rotation + component.animation.rotate : component.rotation;
-    //change origin around which the component rotates
+
+    if(!("orbit" in component.animation)) return;
+
+    component.animation.orbit.rotation = component.animation.orbit.rotation + component.animation.orbit.speed;
   }
 
   draw() {
@@ -101,23 +114,62 @@ const tower = [
     height: 50,
     colour: "blue",
     rotation: 0,
+    radii: [10],
     lineWidth: 2,
     animation: {
-      rotate: 0
+      rotate: 0,
     }
   },
   {
     shape: "rect",
     x: 0,
     y: 0,
-    width: 30,
-    height: 30,
+    width: 20,
+    height: 20,
     colour: "green",
-    rotation: 45,
+    rotation: 0,
     radii: [5],
     lineWidth: 3,
     animation: {
-      rotate: -1
+      rotate: -6,
+      orbit: {
+        rotation: 0,
+        radius: 35,
+        speed: 2
+      }
+    }
+  },
+  {
+    shape: "rect",
+    x: 0,
+    y: 0,
+    width: 20,
+    height: 20,
+    colour: "green",
+    rotation: 0,
+    radii: [5],
+    lineWidth: 3,
+    animation: {
+      rotate: -6,
+      orbit: {
+        rotation: 180,
+        radius: 35,
+        speed: 2
+      }
+    }
+  },
+  {
+    shape: "rect",
+    x: 0,
+    y: 0,
+    width: 15,
+    height: 15,
+    colour: "red",
+    rotation: 0,
+    radii: [1],
+    lineWidth: 3,
+    animation: {
+      rotate: -3,
     }
   }
 ];
